@@ -5,14 +5,14 @@
 | Field                      | Last observed state                                                                                                                                    |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Project goal               | Build a hackathon prototype that evaluates gym exercise form from video, produces a canonical 3D replay, and records social workout rewards on Solana. |
-| Current phase              | Repetition fix, wellbeing redesign, and Kimodo-ready motion replay implemented; GitHub sync in progress.                                               |
-| Branch / commit            | `codex/movement-review`; product commits `a1e2ec3` and `7624389`, based on remote `main` at `f3c8cc3`.                                                 |
-| Active primary sub-problem | SP-002 — Pose and Gemini analysis                                                                                                                      |
-| Last validated milestone   | Supplied 14.4s clip detects all five reps; 13 TypeScript and 2 worker tests, 5 Chrome workflows, lint, and production build pass.                      |
-| Current blocker or risk    | Live Gemini is unconfigured; live Kimodo generation needs a supported NVIDIA host. Counter validation covers one real clip.                            |
-| Exact next action          | Push the ledger checkpoint, then configure and verify Gemini/Kimodo services or begin the Solana devnet proof slice.                                   |
+| Current phase              | Solana devnet proof slice implemented and locally verified; live service and wallet validation remain.                                                 |
+| Branch / commit            | `codex/movement-review` at `0fda3ba`; Solana proof work is uncommitted.                                                                                |
+| Active primary sub-problem | SP-004 — Solana workout proof and rewards                                                                                                              |
+| Last validated milestone   | 18 TypeScript tests including LiteSVM execution, 2 worker tests, 5 Chrome flows including the five-rep clip, lint, and production build pass.          |
+| Current blocker or risk    | Public devnet faucet returned an internal error; no installed wallet flow, live Gemini, or live Kimodo generation has been verified.                   |
+| Exact next action          | Verify one funded browser-wallet devnet receipt, then define a trusted server attestation before awarding app points.                                  |
 | Most relevant prior chat   | [Step 1 implementation](codex://threads/01a096d1-daa3-7c62-8353-be67a427c1a8)                                                                          |
-| Ledger updated             | 2026-09-12T15:24:12-05:00                                                                                                                              |
+| Ledger updated             | 2026-09-12T15:37:51-05:00                                                                                                                              |
 
 ## Status Legend
 
@@ -33,9 +33,9 @@ The proposed project, provisionally named FormChain, analyzes a short single-per
 
 ### System Architecture
 
-Current: Next.js 16.3.5 / React 19 app in `src/app/page.tsx`; browser video sampling in `src/lib/video.ts`; pure measurement/rep logic in `src/lib/analysis.ts`; validated Gemini route in `src/app/api/coach/route.ts` and schemas in `src/lib/coaching.ts`. Real video upload, 15 samples per second, CPU MediaPipe inference, landmark inspection, rep phase keyframes, movement graph, JSON export, and explicit synthetic sample are implemented. Gemini requires server configuration and has not been called live. Nothing is persisted or published on-chain.
+Current: Next.js 16.3.5 / React 19 app in `src/app/page.tsx`; browser video sampling in `src/lib/video.ts`; pure measurement/rep logic in `src/lib/analysis.ts`; validated Gemini route in `src/app/api/coach/route.ts`; Kimodo adapter/viewer; and a Solana Kit/Wallet Standard client with bounded claim hashing and a Memo-program transaction. Real video analysis, rep keyframes, review, JSON export, local BVH playback, and conditional devnet proof are implemented. Gemini and Kimodo require external configuration. The memo path executes in LiteSVM; no live workout receipt or reward has been issued.
 
-Target architecture (step 4 is adapter-complete but not live-model-verified; step 5 remains unimplemented):
+Target architecture (step 4 is adapter-complete but not live-model-verified; step 5 is self-claim-complete but not live-wallet-verified):
 
 1. Browser captures or uploads a short clip.
 2. A local pose landmarker processes frames at useful exercise cadence and computes joint angles, rep phases, visibility, and candidate keyframes.
@@ -59,17 +59,17 @@ flowchart TD
     SP002 --> SP005["SP-005 Wellbeing design"]
     class SP005 complete
     class SP003 active
-    class SP004 deferred
+    class SP004 active
 ```
 
 ### Active Work Map
 
-| Sub-problem | Status      | Branch / worktree                         | HEAD      | Sessions     | Blocker / next action                                       |
-| ----------- | ----------- | ----------------------------------------- | --------- | ------------ | ----------------------------------------------------------- |
-| SP-001      | ✅ COMPLETE | `codex/movement-review` / repository root | `7624389` | Current task | Scope approved and implemented through the motion adapter   |
-| SP-002      | 🔵 ACTIVE   | `codex/movement-review` / repository root | `7624389` | Current task | Five-rep clip verified; live Gemini validation remains      |
-| SP-003      | 🔵 ACTIVE   | `codex/movement-review` / repository root | `7624389` | Current task | Viewer and worker adapter verified; needs NVIDIA model host |
-| SP-004      | ⚪ DEFERRED | Not started                               | —         | —            | Needs a trusted result/attestation schema                   |
+| Sub-problem | Status      | Branch / worktree                         | HEAD                    | Sessions     | Blocker / next action                                         |
+| ----------- | ----------- | ----------------------------------------- | ----------------------- | ------------ | ------------------------------------------------------------- |
+| SP-001      | ✅ COMPLETE | `codex/movement-review` / repository root | `7624389`               | Current task | Scope approved and implemented through the motion adapter     |
+| SP-002      | 🔵 ACTIVE   | `codex/movement-review` / repository root | `7624389`               | Current task | Five-rep clip verified; live Gemini validation remains        |
+| SP-003      | 🔵 ACTIVE   | `codex/movement-review` / repository root | `7624389`               | Current task | Viewer and worker adapter verified; needs NVIDIA model host   |
+| SP-004      | 🔵 ACTIVE   | `codex/movement-review` / repository root | `0fda3ba` + uncommitted | Current task | Local proof executes; needs funded wallet/devnet verification |
 
 ## Sub-problem Index
 
@@ -78,7 +78,7 @@ flowchart TD
 | SP-001 | MVP architecture and feasibility |        1 | ✅ COMPLETE | None     | SP-002, SP-003, SP-004 | Scope accepted                         |
 | SP-002 | Pose and Gemini analysis         |        2 | 🔵 ACTIVE   | SP-001   | SP-003, SP-004         | Validate real squat footage and Gemini |
 | SP-003 | Kimodo canonical replay          |        3 | 🔵 ACTIVE   | SP-002   | Demo UI                | Verify generation on an NVIDIA host    |
-| SP-004 | Solana workout proof and rewards |        3 | ⚪ DEFERRED | SP-002   | Social feed            | Implement devnet signed proof first    |
+| SP-004 | Solana workout proof and rewards |        3 | 🔵 ACTIVE   | SP-002   | Social feed            | Verify live proof; design attestation  |
 
 ## Sub-problems
 
@@ -173,18 +173,37 @@ Defines the interfaces and fallback strategy for all implementation work.
 - Git: implementation commit `7624389203da697cf3e8e960b1e94271fcd88d52` on `codex/movement-review`; draft PR #1 tracks the branch.
 - Next: deploy the worker on a supported NVIDIA machine, verify `/health`, execute one front-squat generation, and inspect the returned skeleton/scale. Do not wire the output into scoring.
 
+### SP-004 — Solana workout proof and rewards
+
+- State: 🔵 ACTIVE. Wallet discovery, bounded claim hashing, and the Memo transaction are implemented and locally verified; a funded browser-wallet receipt on devnet remains outstanding.
+- Boundaries: fixed to `solana:devnet`; only real video analyses with at least one repetition, 75% tracking coverage, and a non-null provisional metric may create a proof. Synthetic samples and incomplete/low-coverage results are excluded.
+- Data: public memo contains a SHA-256 claim digest plus exercise, rep count, and set/clip milliseconds. The hashed versioned claim also commits to detector version, coverage, and range/tempo score. No frames, landmarks, coaching, or raw score are public.
+- Trust: this is explicitly a wallet-signed self-claim, not attendance, form, or reward attestation. Set duration is not total gym time. No token or production points are issued.
+- Implementation: `src/lib/workout-proof.ts`, `src/lib/solana-client.ts`, `src/components/workout-proof.tsx`, conditional sidebar insertion, public RPC configuration, local validator test, and opt-in live devnet smoke script.
+- Validation: 18 TypeScript tests pass, including exact Memo encoding and signed LiteSVM execution; 2 Python worker tests, lint, production build, and 5 Chrome flows pass. The supplied video still yields five reps and exposes the proof control; the synthetic sample does not. Full-page real-video UI inspected.
+- Live attempt: an explicitly labeled integration-test memo used a throwaway in-memory signer, but the public devnet faucet returned JSON-RPC internal error during funding. No transaction was submitted and no Explorer receipt exists.
+- Next: connect an installed devnet wallet with faucet SOL and confirm one Explorer receipt. Before rewards, add a server attestation/versioned policy and replay protection; do not derive total gym time from clip length.
+
 ## Prioritized Future Chats
 
-| Task     | Target | Priority | Readiness | Why / dependencies                                                                                | Scope and non-goals                                               | Outcome / verification                                               | Branch                       | Start chat   |
-| -------- | ------ | -------- | --------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------- | ------------ |
-| NEXT-001 | SP-002 | P0       | BLOCKED   | Implementation exists; requires real squat clip and Gemini configuration for remaining acceptance | Validate count/phase accuracy and live coaching; no new exercises | Manually labeled clip matches phases; actual Gemini review succeeds  | `codex/squat-analysis-mvp`   | Unavailable  |
-| NEXT-002 | SP-003 | P1       | BLOCKED   | Viewer and adapter are ready; requires a supported NVIDIA host and checkpoint access              | Verify one live generation; no faithful athlete reconstruction    | Worker health succeeds and returned BVH plays in the existing viewer | `codex/movement-review`      | Current task |
-| NEXT-003 | SP-004 | P1       | BLOCKED   | Qualifies the Solana track; depends on score schema                                               | Wallet connect and devnet proof; no production token economy      | Explorer-confirmed transaction contains session hash and score claim | `codex/solana-workout-proof` | Unavailable  |
+| Task     | Target | Priority | Readiness | Why / dependencies                                                                                | Scope and non-goals                                                 | Outcome / verification                                               | Branch                       | Start chat   |
+| -------- | ------ | -------- | --------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------- | ------------ |
+| NEXT-001 | SP-002 | P0       | BLOCKED   | Implementation exists; requires real squat clip and Gemini configuration for remaining acceptance | Validate count/phase accuracy and live coaching; no new exercises   | Manually labeled clip matches phases; actual Gemini review succeeds  | `codex/squat-analysis-mvp`   | Unavailable  |
+| NEXT-002 | SP-003 | P1       | BLOCKED   | Viewer and adapter are ready; requires a supported NVIDIA host and checkpoint access              | Verify one live generation; no faithful athlete reconstruction      | Worker health succeeds and returned BVH plays in the existing viewer | `codex/movement-review`      | Current task |
+| NEXT-003 | SP-004 | P1       | BLOCKED   | Local transaction is verified; needs an installed funded devnet wallet                            | Confirm existing wallet flow; no production token economy           | Explorer-confirmed receipt contains the expected FormChain memo      | `codex/movement-review`      | Current task |
+| NEXT-004 | SP-004 | P1       | BLOCKED   | Rewards require a trusted server attestation and a defensible gym-time source                     | Versioned reward policy and off-chain ledger; no SPL mint or new UI | Replay-safe tests show only server-attested evidence earns points    | `codex/solana-reward-policy` | Unavailable  |
 
 <details>
 <summary>NEXT-001 handoff prompt</summary>
 
 Use `$maintain-project-ledger`. Read `.codex/PROJECT_LEDGER.md`, starting with `Resume Here`. Work on `SP-002` / `NEXT-001`. Verify current Git state and preserve the existing implementation. Validate a real side-view squat clip against manually counted reps and phase timestamps, then verify Gemini with server-side credentials. Respect the provisional scoring and privacy decisions, run relevant tests, and update the ledger at handoff.
+
+</details>
+
+<details>
+<summary>NEXT-004 handoff prompt</summary>
+
+Use `$maintain-project-ledger`. Read `.codex/PROJECT_LEDGER.md`, starting with `Resume Here`. Work on `SP-004` / `NEXT-004`. Preserve the existing visual design. Define a versioned server-attested reward policy and replay-safe off-chain points ledger. Treat the existing wallet memo as a self-claim, do not infer total gym time from clip duration, do not mint SPL tokens, and update the ledger with evidence-backed validation.
 
 </details>
 
@@ -197,6 +216,7 @@ Use `$maintain-project-ledger`. Read `.codex/PROJECT_LEDGER.md`, starting with `
 | DEC-003 | Store hashes/claims, not raw workout video, on Solana                                                | Protects privacy and keeps transactions small                                       | SP-004     | Active |
 | DEC-004 | Count only visible complete cycles; withhold score below 75% tracking coverage                       | Missing frames must not fabricate repetitions                                       | SP-002     | Active |
 | DEC-005 | Prototype range-and-tempo score; Gemini supplies observations rather than numerical safety judgments | Neither clinical accuracy nor general exercise recognition has been validated       | SP-002     | Active |
+| DEC-006 | Treat wallet memos as self-claims and withhold rewards until server attestation exists               | Client-generated claims can be replayed or fabricated outside the application       | SP-004     | Active |
 
 ## State Conflicts
 
@@ -206,9 +226,17 @@ Use `$maintain-project-ledger`. Read `.codex/PROJECT_LEDGER.md`, starting with `
 
 ## Ledger History
 
-| Timestamp                 | Branch / commit                     | Material update                                                                                                                                                 |
-| ------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-12T13:21:17-05:00 | `main` / unborn                     | Initialized ledger with feasibility findings, target architecture, risks, and proposed MVP sequence.                                                            |
-| 2026-09-12T13:50:50-05:00 | `main` / unborn                     | User approved staged work. Implemented step 1 and recorded software validation, current limitations, and real-footage/Gemini acceptance checks.                 |
-| 2026-09-12T14:44:46-05:00 | `codex/movement-review` / `f3c8cc3` | Reproduced and fixed five-rep undercount, implemented evidence-informed redesign, and connected requested GitHub remote without replacing existing history.     |
-| 2026-09-12T15:24:12-05:00 | `codex/movement-review` / `7624389` | Added bounded Kimodo worker adapter and Three.js BVH viewer; verified 13 TS tests, 2 worker tests, 5 Chrome flows including the five-rep clip, lint, and build. |
+| Timestamp                 | Branch / commit                                   | Material update                                                                                                                                                                              |
+| ------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-12T13:21:17-05:00 | `main` / unborn                                   | Initialized ledger with feasibility findings, target architecture, risks, and proposed MVP sequence.                                                                                         |
+| 2026-09-12T13:50:50-05:00 | `main` / unborn                                   | User approved staged work. Implemented step 1 and recorded software validation, current limitations, and real-footage/Gemini acceptance checks.                                              |
+| 2026-09-12T14:44:46-05:00 | `codex/movement-review` / `f3c8cc3`               | Reproduced and fixed five-rep undercount, implemented evidence-informed redesign, and connected requested GitHub remote without replacing existing history.                                  |
+| 2026-09-12T15:24:12-05:00 | `codex/movement-review` / `7624389`               | Added bounded Kimodo worker adapter and Three.js BVH viewer; verified 13 TS tests, 2 worker tests, 5 Chrome flows including the five-rep clip, lint, and build.                              |
+| 2026-09-12T15:37:51-05:00 | `codex/movement-review` / `0fda3ba` + uncommitted | Implemented bounded Solana devnet self-claim flow; verified LiteSVM transaction, 18 TS tests, 2 worker tests, 5 Chrome flows, lint, and build. Live faucet funding failed before submission. |
+
+## Status reconciliation — 2026-09-12T15:35:39-05:00
+
+- Read-only product status inspection verified branch `codex/movement-review`, HEAD `0fda3ba`, and one worktree at `/Users/safwankamal/Documents/HackwestTX`. Local tracking reference shows no ahead/behind marker; remote was not fetched.
+- SP-004 is now implementation-in-progress, superseding the earlier deferred/not-started snapshot: uncommitted wallet UI, Solana client, bounded claim/hash/memo helpers, unit/local-validator tests, and a devnet verification script are present. Package/config, page/styles, and browser tests also have uncommitted changes. No tests or live transaction were executed in this status review; completion remains unverified.
+- Prior test results above remain historical evidence. Live Gemini and Kimodo validation are still not evidenced by this review. Next priority is validating the current Solana slice, then live integrations and broader clip coverage.
+- Current task ID/link: unavailable from current surface. No application code changed during this review; ledger only.

@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { analyzeSquats, demoFrames, type PoseFrame } from "@/lib/analysis";
+import {
+  analyzeSquats,
+  demoFrames,
+  type Analysis,
+  type PoseFrame,
+} from "@/lib/analysis";
 import { analyzeVideo, type ClipResult } from "@/lib/video";
 import type { Coaching } from "@/lib/coaching";
 import Link from "next/link";
@@ -9,6 +14,9 @@ import dynamic from "next/dynamic";
 const MotionReplay = dynamic(() => import("@/components/motion-replay"), {
   ssr: false,
 });
+const WorkoutProof = dynamic(() => import("@/components/workout-proof"), {
+  ssr: false,
+}) as React.ComponentType<{ analysis: Analysis }>;
 
 const clock = (t: number) =>
   Math.floor(t / 60) + ":" + (t % 60).toFixed(1).padStart(4, "0");
@@ -587,6 +595,11 @@ export default function Home() {
                 </p>
               )}
             </div>
+            {analysis?.source === "video" &&
+              analysis.reps.length > 0 &&
+              analysis.movementScore !== null && (
+                <WorkoutProof analysis={analysis} />
+              )}
           </aside>
         </div>
         <section className="rep-section" aria-labelledby="rep-title">

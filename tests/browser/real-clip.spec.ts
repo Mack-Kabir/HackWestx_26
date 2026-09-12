@@ -15,8 +15,16 @@ test("provided front-squat clip exposes all five cycles", async ({ page }) => {
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export session JSON" }).click();
   await (await downloaded).saveAs("test-results/real-clip-analysis.json");
-  await page.screenshot({ path: "test-results/real-clip.png", fullPage: true });
   await expect(page.getByRole("button", { name: /REP 0/ })).toHaveCount(5);
+  await expect(
+    page.getByRole("heading", { name: "Keep a public receipt" }),
+  ).toBeVisible();
+  await page.screenshot({ path: "test-results/real-clip.png", fullPage: true });
+  await expect(
+    page.getByText(
+      "No compatible browser wallet was found. Your movement review is still complete.",
+    ),
+  ).toBeVisible();
   await page.getByRole("button", { name: /REP 05/ }).click();
   await expect(page.locator(".contact-sheet img")).toHaveCount(3);
   await expect(page.getByRole("button", { name: /REP 05/ })).toHaveAttribute(

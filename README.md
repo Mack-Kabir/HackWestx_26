@@ -38,6 +38,28 @@ Set the same secret and the worker's private URL as `KIMODO_API_TOKEN` and `KIMO
 
 The adapter allows one bounded job at a time, sends only a selected squat variation and four-second duration, invokes `kimodo_gen`, and returns BVH. It never receives the workout video or landmarks. Generated output is labeled as a generic demonstration; it does not reconstruct the athlete, prove form quality, or replace the measured review. This local Apple Silicon machine has no NVIDIA GPU, so the live generation path is adapter-tested but not model-executed.
 
+## Solana devnet workout proof
+
+After a real video produces at least one repetition, at least 75% tracking coverage, and the prototype range/tempo metric, the sidebar offers an optional Solana receipt. Wallet Standard discovery uses the current `@solana/kit` stack and is fixed to devnet. The connected wallet pays the small devnet fee and signs a Memo-program transaction.
+
+The public memo includes:
+
+- a SHA-256 digest of the bounded versioned claim;
+- exercise name, repetition count, and clip/set duration;
+- no video, keyframes, landmarks, coaching text, wallet secret, or raw score.
+
+The private claim committed by the digest contains the analysis/detector versions, tracking coverage, and provisional range/tempo score. The transaction is a wallet-signed **self-claim** only. It does not prove attendance, total time at a gym, correct form, or reward eligibility. Synthetic samples, low-coverage clips, and incomplete sets cannot use the proof control. No token is minted and no production points are issued.
+
+`NEXT_PUBLIC_SOLANA_RPC_URL` can override the public devnet endpoint at build time. Because it is browser-visible, never place a secret-bearing provider URL there.
+
+`npm test` executes the exact Memo instruction with a throwaway signer in an in-memory LiteSVM validator. An optional live smoke test creates a new in-memory signer, requests faucet SOL, and writes an explicitly labeled integration-test memo—not a workout claim:
+
+```sh
+npm run test:devnet
+```
+
+This performs a public devnet write. The public faucet is rate-limited and may fail independently of the transaction implementation.
+
 ## What is measured
 
 - Decode 15 sample frames per second of source video, offline. Actual analysis speed depends on the device; this is not a real-time throughput claim.
@@ -68,7 +90,7 @@ Tests include a reduced trace from a real 14.4-second front-squat clip: five rep
 
 1. Validate counts and phases against manually labeled side-view squat clips; verify Gemini with configured credentials.
 2. Run the Kimodo worker on a supported NVIDIA host and verify the adapter against a real SOMA-RP v1.1 generation. The viewer and authenticated job path are implemented; live model execution remains unverified.
-3. Add Solana devnet wallet proofs and rewards. No wallet, transaction, token, leaderboard, or verified gym-time tracking exists yet. Clip duration is not total time at the gym.
+3. Verify the Wallet Standard flow with an installed devnet wallet and an Explorer-confirmed workout receipt. The client, claim hashing, Memo transaction, local validator execution, and conditional control are implemented. Add server attestation and app-level rewards only after deciding what evidence is trustworthy; clip duration is not total time at the gym.
 
 Continuity and task handoffs: `.codex/PROJECT_LEDGER.md`.
 
@@ -77,4 +99,5 @@ Continuity and task handoffs: `.codex/PROJECT_LEDGER.md`.
 - [MediaPipe Pose Landmarker for Web](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker/web_js)
 - [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
 - [NVIDIA Kimodo](https://research.nvidia.com/labs/sil/projects/kimodo/)
+- [Solana Next.js + Kit](https://solana.com/docs/frontend/nextjs-solana)
 - [Solana transactions](https://solana.com/docs/intro/quick-start/writing-to-network)

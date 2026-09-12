@@ -662,6 +662,64 @@ h2 {
   line-height: 1.6;
   font-size: 12px;
 }
+.workout-proof {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.workout-proof h3 {
+  font-size: 17px;
+  font-weight: 500;
+  margin: 9px 0;
+}
+.workout-proof > p:not(.overline, .message, .proof-success) {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+.workout-proof > label {
+  display: block;
+  margin: 16px 0 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.workout-proof > select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #aab3a1;
+  border-radius: 4px;
+  background: #fafaf5;
+  color: var(--ink);
+  padding: 9px 12px;
+}
+.workout-proof > .button {
+  width: 100%;
+  margin-top: 12px;
+}
+.workout-proof > small,
+.proof-note {
+  display: block;
+  margin-top: 12px;
+  line-height: 1.55;
+}
+.proof-wallet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  font-size: 12px;
+}
+.proof-success {
+  margin-top: 14px;
+  padding: 12px;
+  background: var(--sage);
+  font-size: 13px;
+}
+.proof-success a {
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
 .rep-section {
   margin-top: 60px;
   padding-top: 36px;
