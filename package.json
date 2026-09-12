@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "tsx --test tests/*.test.ts",
     "test:devnet": "RUN_SOLANA_DEVNET=1 tsx scripts/verify-devnet-proof.ts",
+    "test:rewards-api": "RUN_REWARD_API=1 tsx scripts/verify-reward-api.ts",
     "test:e2e": "playwright test"
   },
   "dependencies": {

@@ -60,6 +60,18 @@ npm run test:devnet
 
 This performs a public devnet write. The public faucet is rate-limited and may fail independently of the transaction implementation.
 
+### Server-attested prototype rewards
+
+The reward core is intentionally separate from the wallet memo. A trusted analysis service may call `POST /api/rewards/attest` with `x-formchain-issuer-token` only after it has independently accepted the workout evidence. The route recomputes the claim digest and returns a ten-minute HMAC-signed attestation bound to one wallet. The wallet must sign the exact off-chain redemption message before `POST /api/rewards/redeem` awards points. Reused attestations, claims, evidence IDs, and gym-visit IDs are rejected.
+
+Set independent random values of at least 32 bytes for `REWARD_ATTESTATION_SECRET` and `REWARD_ISSUER_TOKEN`. Both are server-only. The browser must never receive either value.
+
+Policy v1 grants 10 participation points for an accepted set, two per repetition up to 40, and at most 12 additional points for time backed by a trusted rotating-QR check-in/out record. The total is capped at 60. The policy does **not** use the provisional form score, and clip duration never earns gym-time points.
+
+The included ledger is an explicit single-process prototype: balances and used attestation IDs are kept in memory and disappear on restart. It demonstrates signature checking and replay rejection, but it is not safe for horizontally scaled or production deployment. A durable database with a unique constraint on `attestationId`, authenticated analysis service, rate limiting, and auditable QR issuer are required before enabling this flow in the UI. No reward token is minted.
+
+With a configured app server running, `npm run test:rewards-api` exercises issuance, wallet signing, successful redemption, and HTTP 409 replay rejection using a throwaway wallet. Set `REWARD_BASE_URL` only if the server is not at `http://127.0.0.1:3000`. The script needs the same test `REWARD_ISSUER_TOKEN` as the server but never receives the attestation secret.
+
 ## What is measured
 
 - Decode 15 sample frames per second of source video, offline. Actual analysis speed depends on the device; this is not a real-time throughput claim.
@@ -90,7 +102,8 @@ Tests include a reduced trace from a real 14.4-second front-squat clip: five rep
 
 1. Validate counts and phases against manually labeled side-view squat clips; verify Gemini with configured credentials.
 2. Run the Kimodo worker on a supported NVIDIA host and verify the adapter against a real SOMA-RP v1.1 generation. The viewer and authenticated job path are implemented; live model execution remains unverified.
-3. Verify the Wallet Standard flow with an installed devnet wallet and an Explorer-confirmed workout receipt. The client, claim hashing, Memo transaction, local validator execution, and conditional control are implemented. Add server attestation and app-level rewards only after deciding what evidence is trustworthy; clip duration is not total time at the gym.
+3. Verify the Wallet Standard flow with an installed devnet wallet and an Explorer-confirmed workout receipt. The client, claim hashing, Memo transaction, local validator execution, and conditional control are implemented.
+4. Connect the server-attested reward core to an authenticated analysis service and durable store, then add rotating-QR attendance evidence. Keep it out of the UI until those trusted dependencies exist; clip duration is not total time at the gym.
 
 Continuity and task handoffs: `.codex/PROJECT_LEDGER.md`.
 
