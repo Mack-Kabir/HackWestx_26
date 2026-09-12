@@ -8,7 +8,10 @@ import {
   type PoseFrame,
 } from "@/lib/analysis";
 import { analyzeVideo, type ClipResult } from "@/lib/video";
-import type { Coaching } from "@/lib/coaching";
+import {
+  selectCoachingKeyframes,
+  type Coaching,
+} from "@/lib/coaching";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 const MotionReplay = dynamic(() => import("@/components/motion-replay"), {
@@ -175,14 +178,10 @@ export default function Home() {
     setCoachError("");
     const controller = new AbortController();
     coachAbort.current = controller;
-    const all = result.keyframes;
-    const chosen =
-      all.length <= 6
-        ? all
-        : Array.from(
-            { length: 6 },
-            (_, i) => all[Math.round((i * (all.length - 1)) / 5)],
-          );
+    const chosen = selectCoachingKeyframes(
+      result.keyframes,
+      result.analysis.reps,
+    );
     try {
       const response = await fetch("/api/coach", {
         method: "POST",
@@ -192,7 +191,11 @@ export default function Home() {
           duration: result.analysis.duration,
           coverage: result.analysis.coverage,
           reps: result.analysis.reps,
-          keyframes: chosen.map(({ time, image }) => ({ time, image })),
+          keyframes: chosen.map(({ time, label, image }) => ({
+            time,
+            label,
+            image,
+          })),
         }),
       });
       const data = await response.json();
@@ -779,7 +782,7 @@ export default function Home() {
             </details>
           )}
         </section>
-        <MotionReplay />
+        <MotionReplay analysis={analysis} />
         <section id="how-it-works" className="how-section">
           <div>
             <p className="overline">A MORE CONSIDERED PRACTICE</p>

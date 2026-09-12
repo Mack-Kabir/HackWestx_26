@@ -4,6 +4,23 @@ test("provided front-squat clip exposes all five cycles", async ({ page }) => {
     !process.env.SQUAT_CLIP,
     "Set SQUAT_CLIP to the local user-provided video.",
   );
+  let coachingRequest: {
+    keyframes: Array<{ label: string; time: number }>;
+  } | null = null;
+  await page.route("**/api/coach", async (route) => {
+    if (route.request().method() === "GET")
+      return route.fulfill({ json: { configured: true } });
+    coachingRequest = route.request().postDataJSON();
+    return route.fulfill({
+      json: {
+        exercise: "squat",
+        confidence: "medium",
+        summary: "Fixture response for keyframe request validation.",
+        cues: [],
+        limitations: ["Fixture response; no provider call was made."],
+      },
+    });
+  });
   await page.goto("/");
   await page
     .getByLabel("Upload squat video")
@@ -16,6 +33,16 @@ test("provided front-squat clip exposes all five cycles", async ({ page }) => {
   await page.getByRole("button", { name: "Export session JSON" }).click();
   await (await downloaded).saveAs("test-results/real-clip-analysis.json");
   await expect(page.getByRole("button", { name: /REP 0/ })).toHaveCount(5);
+  await page.getByRole("button", { name: "Get Gemini coaching" }).click();
+  await expect(page.getByText(/Gemini review · squat/)).toBeVisible();
+  expect(coachingRequest).not.toBeNull();
+  expect(coachingRequest!.keyframes).toHaveLength(6);
+  for (let rep = 1; rep <= 5; rep += 1)
+    expect(
+      coachingRequest!.keyframes.some(
+        (frame) => frame.label === `Rep ${rep} · bottom`,
+      ),
+    ).toBe(true);
   await expect(
     page.getByRole("heading", { name: "Keep a public receipt" }),
   ).toBeVisible();

@@ -1,8 +1,13 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { validateBvh, motionResponse } from "@/lib/motion";
+import type { Analysis } from "@/lib/analysis";
+import {
+  canonicalMotionDuration,
+  validateBvh,
+  motionResponse,
+} from "@/lib/motion";
 
-export default function MotionReplay() {
+export default function MotionReplay({ analysis }: { analysis?: Analysis }) {
   const [configured, setConfigured] = useState(false),
     [busy, setBusy] = useState(false),
     [status, setStatus] = useState("");
@@ -181,11 +186,12 @@ export default function MotionReplay() {
     setStatus("Starting motion generation…");
     const controller = new AbortController();
     cancel.current = controller;
+    const requestedDuration = canonicalMotionDuration(analysis?.reps ?? []);
     try {
       let response = await fetch("/api/motion", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ variant, duration: 4 }),
+        body: JSON.stringify({ variant, duration: requestedDuration }),
         signal: controller.signal,
       });
       let data = await response.json();
@@ -200,7 +206,7 @@ export default function MotionReplay() {
         setStatus(
           job.status === "queued"
             ? "Waiting for the motion worker…"
-            : "Kimodo is generating a four-second demonstration…",
+            : `Kimodo is generating a ${requestedDuration.toFixed(1)}-second demonstration…`,
         );
         await new Promise<void>((resolve, reject) => {
           const abort = () => {

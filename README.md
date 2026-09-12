@@ -36,7 +36,9 @@ python3 services/kimodo/worker.py
 
 Set the same secret and the worker's private URL as `KIMODO_API_TOKEN` and `KIMODO_URL` in the web app's `.env.local`, then restart Next.js. The worker listens on `127.0.0.1:8001` by default. If the web app runs elsewhere, expose the worker only through a private authenticated tunnel or TLS reverse proxy; setting `KIMODO_BIND=0.0.0.0` alone is not a secure deployment.
 
-The adapter allows one bounded job at a time, sends only a selected squat variation and four-second duration, invokes `kimodo_gen`, and returns BVH. It never receives the workout video or landmarks. Generated output is labeled as a generic demonstration; it does not reconstruct the athlete, prove form quality, or replace the measured review. This local Apple Silicon machine has no NVIDIA GPU, so the live generation path is adapter-tested but not model-executed.
+The adapter allows one bounded job at a time, sends only a selected squat variation and a 2–8 second duration, invokes `kimodo_gen` with a fixed demo seed, and returns a standard-T-pose SOMA77 BVH. After analysis, the requested duration follows the set's median detected rep time with a small start/end buffer; without analysis it remains four seconds. The worker accepts both current single-output BVH filename conventions.
+
+It never receives the workout video or landmarks. Normalized single-camera MediaPipe points are not converted into Kimodo constraints: Kimodo constraints require skeleton-local rotations or metric, Y-up 3D joint positions, which this app does not measure. Generated output is therefore labeled as a generic tempo-matched demonstration; it does not reconstruct the athlete, prove form quality, or replace the measured review. This local Apple Silicon machine has no NVIDIA GPU, so the live generation path is adapter-tested but not model-executed.
 
 ## Solana devnet workout proof
 
@@ -112,5 +114,8 @@ Continuity and task handoffs: `.codex/PROJECT_LEDGER.md`.
 - [MediaPipe Pose Landmarker for Web](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker/web_js)
 - [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
 - [NVIDIA Kimodo](https://research.nvidia.com/labs/sil/projects/kimodo/)
+- [Kimodo CLI](https://research.nvidia.com/labs/sil/projects/kimodo/docs/user_guide/cli.html)
+- [Kimodo constraints](https://research.nvidia.com/labs/sil/projects/kimodo/docs/user_guide/constraints.html)
+- [Kimodo output formats](https://research.nvidia.com/labs/sil/projects/kimodo/docs/user_guide/output_formats.html)
 - [Solana Next.js + Kit](https://solana.com/docs/frontend/nextjs-solana)
 - [Solana transactions](https://solana.com/docs/intro/quick-start/writing-to-network)

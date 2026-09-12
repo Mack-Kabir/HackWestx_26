@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { angle, analyzeSquats, demoFrames } from "../src/lib/analysis";
-import { coachingSchema, coachingInput } from "../src/lib/coaching";
+import {
+  buildCoachingPrompt,
+  coachingSchema,
+  coachingInput,
+  selectCoachingKeyframes,
+} from "../src/lib/coaching";
 import { detectReps } from "../src/lib/rep-detector";
 import trace from "./fixtures/front-squat-trace.json";
 
@@ -107,4 +112,40 @@ test("coaching contracts reject missing evidence and malformed output", () => {
     }).success,
     false,
   );
+});
+
+test("Gemini keyframes include the bottom of every rep in a five-rep set", () => {
+  const reps = Array.from({ length: 5 }, (_, index) => ({
+    start: index * 3,
+    bottom: index * 3 + 1,
+    end: index * 3 + 2,
+    minKnee: 90 + index,
+    maxLean: 20 + index,
+    descent: 1,
+    ascent: 1,
+  }));
+  const keyframes = reps.flatMap((rep, index) => [
+    { time: rep.start, label: `Rep ${index + 1} · start`, image: "start" },
+    { time: rep.bottom, label: `Rep ${index + 1} · bottom`, image: "bottom" },
+    { time: rep.end, label: `Rep ${index + 1} · return`, image: "return" },
+  ]);
+  const selected = selectCoachingKeyframes(keyframes, reps);
+  assert.equal(selected.length, 6);
+  for (let rep = 1; rep <= 5; rep += 1)
+    assert.ok(selected.some((frame) => frame.label === `Rep ${rep} · bottom`));
+
+  const prompt = buildCoachingPrompt(
+    coachingInput.parse({
+      duration: 15,
+      coverage: 1,
+      reps,
+      keyframes: selected.map((frame) => ({
+        ...frame,
+        image: "data:image/jpeg;base64,AA==",
+      })),
+    }),
+  );
+  assert.match(prompt, /bottom frame for every repetition/);
+  assert.match(prompt, /"rep":5/);
+  assert.match(prompt, /Do not give a numerical form score/);
 });
