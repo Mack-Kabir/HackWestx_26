@@ -5,14 +5,14 @@
 | Field                      | Last observed state                                                                                                                                    |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Project goal               | Build a hackathon prototype that evaluates gym exercise form from video, produces a canonical 3D replay, and records social workout rewards on Solana. |
-| Current phase | Repetition-count fix and researched wellbeing redesign verified; preparing GitHub sync, then Kimodo. |
-| Branch / commit | `codex/movement-review`, based on remote initial commit `f3c8cc36314f4c8af54bced14873d82a0211971f`; feature work awaiting commit. |
+| Current phase              | Repetition fix, wellbeing redesign, and Kimodo-ready motion replay implemented; GitHub sync in progress.                                               |
+| Branch / commit            | `codex/movement-review`; product commits `a1e2ec3` and `7624389`, based on remote `main` at `f3c8cc3`.                                                 |
 | Active primary sub-problem | SP-002 — Pose and Gemini analysis                                                                                                                      |
-| Last validated milestone | Supplied 14.4s front-squat video: old detector 1 rep, new detector 5; 10 unit tests, browser workflows, lint/build pass. |
-| Current blocker or risk | Live Gemini unconfigured; Kimodo needs a suitable model host. Counter validation currently covers one real clip. |
-| Exact next action | Sync verified fixes/redesign to GitHub, then implement Kimodo worker connection and replay viewer. |
-| Most relevant prior chat   | [Step 1 implementation](codex://threads/01a096d1-daa3-7c62-8353-be67a427c1a8) |
-| Ledger updated | 2026-09-12T14:44:46-05:00 |
+| Last validated milestone   | Supplied 14.4s clip detects all five reps; 13 TypeScript and 2 worker tests, 5 Chrome workflows, lint, and production build pass.                      |
+| Current blocker or risk    | Live Gemini is unconfigured; live Kimodo generation needs a supported NVIDIA host. Counter validation covers one real clip.                            |
+| Exact next action          | Push the ledger checkpoint, then configure and verify Gemini/Kimodo services or begin the Solana devnet proof slice.                                   |
+| Most relevant prior chat   | [Step 1 implementation](codex://threads/01a096d1-daa3-7c62-8353-be67a427c1a8)                                                                          |
+| Ledger updated             | 2026-09-12T15:24:12-05:00                                                                                                                              |
 
 ## Status Legend
 
@@ -35,7 +35,7 @@ The proposed project, provisionally named FormChain, analyzes a short single-per
 
 Current: Next.js 16.3.5 / React 19 app in `src/app/page.tsx`; browser video sampling in `src/lib/video.ts`; pure measurement/rep logic in `src/lib/analysis.ts`; validated Gemini route in `src/app/api/coach/route.ts` and schemas in `src/lib/coaching.ts`. Real video upload, 15 samples per second, CPU MediaPipe inference, landmark inspection, rep phase keyframes, movement graph, JSON export, and explicit synthetic sample are implemented. Gemini requires server configuration and has not been called live. Nothing is persisted or published on-chain.
 
-Target architecture (steps 4 and 5 remain unimplemented):
+Target architecture (step 4 is adapter-complete but not live-model-verified; step 5 remains unimplemented):
 
 1. Browser captures or uploads a short clip.
 2. A local pose landmarker processes frames at useful exercise cadence and computes joint angles, rep phases, visibility, and candidate keyframes.
@@ -58,17 +58,18 @@ flowchart TD
     class SP002 active
     SP002 --> SP005["SP-005 Wellbeing design"]
     class SP005 complete
-    class SP003,SP004 deferred
+    class SP003 active
+    class SP004 deferred
 ```
 
 ### Active Work Map
 
-| Sub-problem | Status      | Branch / worktree        | HEAD   | Sessions    | Blocker / next action                                                                       |
-| ----------- | ----------- | ------------------------ | ------ | ----------- | ------------------------------------------------------------------------------------------- |
-| SP-001      | ✅ COMPLETE | `main` / repository root | Unborn | Unavailable | User authorized step-by-step implementation                                                 |
-| SP-002      | 🔵 ACTIVE   | `main` / repository root | Unborn | Unavailable | Implementation verified on synthetic/blank data; real squat and live Gemini validation next |
-| SP-003      | ⚪ DEFERRED | Not started              | —      | —           | Needs pose output and GPU strategy                                                          |
-| SP-004      | ⚪ DEFERRED | Not started              | —      | —           | Needs scoring result schema                                                                 |
+| Sub-problem | Status      | Branch / worktree                         | HEAD      | Sessions     | Blocker / next action                                       |
+| ----------- | ----------- | ----------------------------------------- | --------- | ------------ | ----------------------------------------------------------- |
+| SP-001      | ✅ COMPLETE | `codex/movement-review` / repository root | `7624389` | Current task | Scope approved and implemented through the motion adapter   |
+| SP-002      | 🔵 ACTIVE   | `codex/movement-review` / repository root | `7624389` | Current task | Five-rep clip verified; live Gemini validation remains      |
+| SP-003      | 🔵 ACTIVE   | `codex/movement-review` / repository root | `7624389` | Current task | Viewer and worker adapter verified; needs NVIDIA model host |
+| SP-004      | ⚪ DEFERRED | Not started                               | —         | —            | Needs a trusted result/attestation schema                   |
 
 ## Sub-problem Index
 
@@ -76,7 +77,7 @@ flowchart TD
 | ------ | -------------------------------- | -------: | ----------- | -------- | ---------------------- | -------------------------------------- |
 | SP-001 | MVP architecture and feasibility |        1 | ✅ COMPLETE | None     | SP-002, SP-003, SP-004 | Scope accepted                         |
 | SP-002 | Pose and Gemini analysis         |        2 | 🔵 ACTIVE   | SP-001   | SP-003, SP-004         | Validate real squat footage and Gemini |
-| SP-003 | Kimodo canonical replay          |        3 | ⚪ DEFERRED | SP-002   | Demo UI                | Choose local GPU or prepared fallback  |
+| SP-003 | Kimodo canonical replay          |        3 | 🔵 ACTIVE   | SP-002   | Demo UI                | Verify generation on an NVIDIA host    |
 | SP-004 | Solana workout proof and rewards |        3 | ⚪ DEFERRED | SP-002   | Social feed            | Implement devnet signed proof first    |
 
 ## Sub-problems
@@ -162,13 +163,23 @@ Defines the interfaces and fallback strategy for all implementation work.
 - Session: [Current task](codex://threads/01a096d1-daa3-7c62-8353-be67a427c1a8), 2026-09-12. Related SP-002 and SP-003. Kimodo live-host question pending; Mac is arm64 and no nvidia-smi is installed.
 - Next: finish GitHub checkpoint, then Kimodo service/viewer. No production fitness-accuracy claim.
 
+### SP-003 — Kimodo canonical replay
+
+- State: 🔵 ACTIVE. The integration boundary and fallback viewer are implemented; live model generation remains blocked on a compatible NVIDIA host and checkpoint access.
+- Implemented: dynamically loaded Three.js BVH viewer with orbit, play/pause, and scrubbing; strict 2 MB BVH grammar/numeric/frame bounds; local BVH import; authenticated server-only proxy; bounded single-worker Python queue that invokes `kimodo_gen` with SOMA-RP v1.1 and standard T-pose BVH output.
+- Privacy and claims: the worker receives only squat variation and duration, never video or landmarks. The interface calls output a generated demonstration and explicitly says it neither reconstructs the athlete nor certifies technique.
+- Validation: 3 motion contract/BVH tests and 2 Python worker-command tests pass; browser coverage imports and plays a fixture BVH, verifies unconfigured generation is disabled, and checks invalid/unconfigured API responses. Full result: 13 TypeScript tests, 2 worker tests, 5 Chrome workflows including the supplied video, lint, and production build pass. Full-page desktop screenshot inspected.
+- Environment: local host is Apple Silicon without `nvidia-smi`; no claim of live Kimodo execution. Setup, network exposure warning, environment variables, and limitations are in `README.md` and `.env.example`.
+- Git: implementation commit `7624389203da697cf3e8e960b1e94271fcd88d52` on `codex/movement-review`; draft PR #1 tracks the branch.
+- Next: deploy the worker on a supported NVIDIA machine, verify `/health`, execute one front-squat generation, and inspect the returned skeleton/scale. Do not wire the output into scoring.
+
 ## Prioritized Future Chats
 
-| Task     | Target | Priority | Readiness | Why / dependencies                                                                                | Scope and non-goals                                                | Outcome / verification                                               | Branch                       | Start chat  |
-| -------- | ------ | -------- | --------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | -------------------------------------------------------------------- | ---------------------------- | ----------- |
-| NEXT-001 | SP-002 | P0       | BLOCKED   | Implementation exists; requires real squat clip and Gemini configuration for remaining acceptance | Validate count/phase accuracy and live coaching; no new exercises  | Manually labeled clip matches phases; actual Gemini review succeeds  | `codex/squat-analysis-mvp`   | Unavailable |
-| NEXT-002 | SP-003 | P1       | BLOCKED   | Strong visual demo; depends on SP-002 and GPU choice                                              | Kimodo adapter plus one replay; no faithful athlete reconstruction | Constraint request produces a viewable motion or documented fallback | `codex/kimodo-replay`        | Unavailable |
-| NEXT-003 | SP-004 | P1       | BLOCKED   | Qualifies the Solana track; depends on score schema                                               | Wallet connect and devnet proof; no production token economy       | Explorer-confirmed transaction contains session hash and score claim | `codex/solana-workout-proof` | Unavailable |
+| Task     | Target | Priority | Readiness | Why / dependencies                                                                                | Scope and non-goals                                               | Outcome / verification                                               | Branch                       | Start chat   |
+| -------- | ------ | -------- | --------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------- | ---------------------------- | ------------ |
+| NEXT-001 | SP-002 | P0       | BLOCKED   | Implementation exists; requires real squat clip and Gemini configuration for remaining acceptance | Validate count/phase accuracy and live coaching; no new exercises | Manually labeled clip matches phases; actual Gemini review succeeds  | `codex/squat-analysis-mvp`   | Unavailable  |
+| NEXT-002 | SP-003 | P1       | BLOCKED   | Viewer and adapter are ready; requires a supported NVIDIA host and checkpoint access              | Verify one live generation; no faithful athlete reconstruction    | Worker health succeeds and returned BVH plays in the existing viewer | `codex/movement-review`      | Current task |
+| NEXT-003 | SP-004 | P1       | BLOCKED   | Qualifies the Solana track; depends on score schema                                               | Wallet connect and devnet proof; no production token economy      | Explorer-confirmed transaction contains session hash and score claim | `codex/solana-workout-proof` | Unavailable  |
 
 <details>
 <summary>NEXT-001 handoff prompt</summary>
@@ -195,8 +206,9 @@ Use `$maintain-project-ledger`. Read `.codex/PROJECT_LEDGER.md`, starting with `
 
 ## Ledger History
 
-| Timestamp                 | Branch / commit | Material update                                                                                                                                 |
-| ------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-09-12T13:21:17-05:00 | `main` / unborn | Initialized ledger with feasibility findings, target architecture, risks, and proposed MVP sequence.                                            |
-| 2026-09-12T13:50:50-05:00 | `main` / unborn | User approved staged work. Implemented step 1 and recorded software validation, current limitations, and real-footage/Gemini acceptance checks. |
-| 2026-09-12T14:44:46-05:00 | `codex/movement-review` / `f3c8cc3` | Reproduced and fixed five-rep undercount, implemented evidence-informed redesign, and connected requested GitHub remote without replacing existing history. |
+| Timestamp                 | Branch / commit                     | Material update                                                                                                                                                 |
+| ------------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-12T13:21:17-05:00 | `main` / unborn                     | Initialized ledger with feasibility findings, target architecture, risks, and proposed MVP sequence.                                                            |
+| 2026-09-12T13:50:50-05:00 | `main` / unborn                     | User approved staged work. Implemented step 1 and recorded software validation, current limitations, and real-footage/Gemini acceptance checks.                 |
+| 2026-09-12T14:44:46-05:00 | `codex/movement-review` / `f3c8cc3` | Reproduced and fixed five-rep undercount, implemented evidence-informed redesign, and connected requested GitHub remote without replacing existing history.     |
+| 2026-09-12T15:24:12-05:00 | `codex/movement-review` / `7624389` | Added bounded Kimodo worker adapter and Three.js BVH viewer; verified 13 TS tests, 2 worker tests, 5 Chrome flows including the five-rep clip, lint, and build. |
