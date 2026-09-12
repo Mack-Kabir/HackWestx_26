@@ -5,6 +5,10 @@ import { analyzeSquats, demoFrames, type PoseFrame } from "@/lib/analysis";
 import { analyzeVideo, type ClipResult } from "@/lib/video";
 import type { Coaching } from "@/lib/coaching";
 import Link from "next/link";
+import dynamic from "next/dynamic";
+const MotionReplay = dynamic(() => import("@/components/motion-replay"), {
+  ssr: false,
+});
 
 const clock = (t: number) =>
   Math.floor(t / 60) + ":" + (t % 60).toFixed(1).padStart(4, "0");
@@ -762,6 +766,7 @@ export default function Home() {
             </details>
           )}
         </section>
+        <MotionReplay />
         <section id="how-it-works" className="how-section">
           <div>
             <p className="overline">A MORE CONSIDERED PRACTICE</p>

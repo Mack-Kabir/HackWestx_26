@@ -42,6 +42,7 @@ p {
 }
 button,
 input,
+select,
 a {
   font: inherit;
 }
@@ -64,6 +65,7 @@ button:disabled {
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
+select:focus-visible,
 summary:focus-visible {
   outline: 3px solid #815838;
   outline-offset: 5px;
@@ -529,6 +531,112 @@ h2 {
   background: transparent;
   text-decoration: none;
 }
+.motion-section {
+  margin-top: 64px;
+  padding-top: 38px;
+  border-top: 1px solid var(--line);
+}
+.motion-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.75fr);
+  gap: 42px;
+  align-items: start;
+}
+.motion-canvas,
+.replay-empty {
+  height: 430px;
+  border-radius: 5px;
+  overflow: hidden;
+  border: 1px solid #d3d8ca;
+  background: #eceee3;
+}
+.motion-canvas canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.replay-empty {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 44px;
+}
+.replay-empty > span {
+  width: 62px;
+  height: 62px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #b8c0ae;
+  border-radius: 50%;
+  color: #64735e;
+  font-size: 28px;
+  margin-bottom: 22px;
+}
+.replay-empty h3,
+.motion-explanation h3 {
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-size: 25px;
+}
+.replay-empty p {
+  max-width: 390px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.motion-controls {
+  display: grid;
+  grid-template-columns: auto 1fr 42px;
+  align-items: center;
+  gap: 14px;
+  margin-top: 14px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.motion-controls input {
+  width: 100%;
+  height: 44px;
+  accent-color: var(--ink);
+}
+.motion-explanation {
+  padding: 28px;
+  background: #e9ebdf;
+  border-radius: 5px;
+}
+.motion-explanation > p {
+  color: #535f50;
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 12px 0 22px;
+}
+.motion-explanation label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin-bottom: 7px;
+}
+.motion-explanation select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #aab3a1;
+  border-radius: 4px;
+  background: #fafaf5;
+  color: var(--ink);
+  padding: 9px 12px;
+}
+.motion-explanation .button {
+  width: 100%;
+  margin-top: 12px;
+}
+.connection-note,
+.motion-explanation [role="status"] {
+  margin-top: 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
 .coaching h3 {
   font-size: 17px;
   font-weight: 500;
@@ -891,6 +999,27 @@ footer p {
   .rep-section {
     margin-top: 38px;
     padding-top: 28px;
+  }
+  .motion-section {
+    margin-top: 42px;
+    padding-top: 28px;
+  }
+  .motion-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .motion-canvas,
+  .replay-empty {
+    height: 350px;
+  }
+  .motion-explanation {
+    padding: 22px;
+  }
+  .motion-controls {
+    grid-template-columns: 1fr 54px;
+  }
+  .motion-controls .button {
+    grid-column: 1 / -1;
   }
   .section-heading {
     display: block;

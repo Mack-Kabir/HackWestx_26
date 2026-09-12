@@ -1,6 +1,6 @@
 # FormChain — Movement Lab
 
-HackWesTX VII prototype. Browser-based squat review: clip upload, MediaPipe landmarks, complete repetitions, knee-angle timeline, phase keyframes, JSON export, and an optional server-side Gemini coaching adapter. The wellbeing redesign and its evidence are documented in [the design research report](docs/health-product-design-research.md).
+HackWesTX VII prototype. Browser-based squat review: clip upload, MediaPipe landmarks, complete repetitions, knee-angle timeline, phase keyframes, JSON export, an optional server-side Gemini coaching adapter, and a Kimodo-ready 3D motion viewer. The wellbeing redesign and its evidence are documented in [the design research report](docs/health-product-design-research.md).
 
 ## Run locally
 
@@ -23,6 +23,21 @@ After local analysis, **Get Gemini coaching** sends up to six JPEG keyframes and
 
 The live Gemini path has not yet been verified with credentials. The public endpoint has no authentication or persistent rate limiting; keep this prototype local until those controls exist.
 
+## Kimodo motion replay
+
+The review includes a Three.js BVH viewer that works without a GPU: choose **Open BVH animation** and import a BVH file under 2 MB. Imported animation is parsed and bounded in the browser before rendering.
+
+Live generation uses the small authenticated adapter in `services/kimodo/worker.py`. Run it on a Linux machine where NVIDIA's `kimodo_gen` CLI, SOMA-RP v1.1 checkpoint, and a supported CUDA GPU are already installed:
+
+```sh
+export KIMODO_API_TOKEN='replace-with-a-long-random-secret'
+python3 services/kimodo/worker.py
+```
+
+Set the same secret and the worker's private URL as `KIMODO_API_TOKEN` and `KIMODO_URL` in the web app's `.env.local`, then restart Next.js. The worker listens on `127.0.0.1:8001` by default. If the web app runs elsewhere, expose the worker only through a private authenticated tunnel or TLS reverse proxy; setting `KIMODO_BIND=0.0.0.0` alone is not a secure deployment.
+
+The adapter allows one bounded job at a time, sends only a selected squat variation and four-second duration, invokes `kimodo_gen`, and returns BVH. It never receives the workout video or landmarks. Generated output is labeled as a generic demonstration; it does not reconstruct the athlete, prove form quality, or replace the measured review. This local Apple Silicon machine has no NVIDIA GPU, so the live generation path is adapter-tested but not model-executed.
+
 ## What is measured
 
 - Decode 15 sample frames per second of source video, offline. Actual analysis speed depends on the device; this is not a real-time throughput claim.
@@ -38,6 +53,7 @@ The legacy movementScore remains in JSON for compatibility but is removed from t
 
 ```sh
 npm test
+python3 -m unittest tests/test_worker.py
 npm run lint
 npm run build
 npx playwright install chromium
@@ -51,7 +67,7 @@ Tests include a reduced trace from a real 14.4-second front-squat clip: five rep
 ## Next steps
 
 1. Validate counts and phases against manually labeled side-view squat clips; verify Gemini with configured credentials.
-2. Add Kimodo motion generation with skeleton mapping and a 3D viewer. Current SVG playback is observed/synthetic landmark inspection, not Kimodo output.
+2. Run the Kimodo worker on a supported NVIDIA host and verify the adapter against a real SOMA-RP v1.1 generation. The viewer and authenticated job path are implemented; live model execution remains unverified.
 3. Add Solana devnet wallet proofs and rewards. No wallet, transaction, token, leaderboard, or verified gym-time tracking exists yet. Clip duration is not total time at the gym.
 
 Continuity and task handoffs: `.codex/PROJECT_LEDGER.md`.

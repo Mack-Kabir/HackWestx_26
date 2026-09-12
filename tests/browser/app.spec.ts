@@ -10,6 +10,9 @@ test("sample analysis, timeline, export, and mobile layout", async ({
   await expect(
     page.getByRole("heading", { name: "Review your squat." }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Explore a motion replay." }),
+  ).toBeVisible();
   await page.screenshot({ path: "test-results/desktop.png", fullPage: true });
   await page.getByRole("button", { name: "Explore a sample" }).click();
   await expect(page.getByText("SYNTHETIC LANDMARK SAMPLE")).toBeVisible();
@@ -46,6 +49,42 @@ test("malformed and oversized API input are rejected", async ({ request }) => {
       await request.post("/api/coach", { data: "x".repeat(2_000_001) })
     ).status(),
   ).toBe(413);
+  expect(
+    (await request.post("/api/motion", { data: { duration: 30 } })).status(),
+  ).toBe(400);
+  expect(
+    (
+      await request.post("/api/motion", {
+        data: { duration: 4, variant: "front-squat" },
+      })
+    ).status(),
+  ).toBe(503);
+});
+
+test("the motion section explains its limits and opens a local BVH", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "Explore a motion replay." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Generate with Kimodo" }),
+  ).toBeDisabled();
+  await page
+    .getByLabel("Import BVH animation")
+    .setInputFiles("tests/fixtures/simple-squat.bvh");
+  await expect(
+    page.locator("canvas[aria-label='3D skeletal motion viewer']"),
+  ).toBeVisible();
+  await expect(page.getByText(/Imported animation/)).toBeVisible();
+  await page.getByRole("button", { name: "Play replay" }).click();
+  await expect(
+    page.getByRole("button", { name: "Pause replay" }),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
 });
 
 test("real video decoding and MediaPipe inference reject an empty scene", async ({
