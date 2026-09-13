@@ -57,7 +57,7 @@ function Skeleton({ frame }: { frame?: PoseFrame }) {
             y1={frame.landmarks[a].y * 1000}
             x2={frame.landmarks[b].x * 1000}
             y2={frame.landmarks[b].y * 1000}
-            stroke="#d7ff93"
+            stroke="#ff3348"
             strokeWidth="4"
           />
         ))}
@@ -67,8 +67,8 @@ function Skeleton({ frame }: { frame?: PoseFrame }) {
           cx={frame.landmarks[i].x * 1000}
           cy={frame.landmarks[i].y * 1000}
           r="6"
-          fill="#d7ff93"
-          stroke="#284635"
+          fill="#ff3348"
+          stroke="#1a0508"
           strokeWidth="2"
         />
       ))}
@@ -664,15 +664,14 @@ export default function Home() {
                     width={((r.end - r.start) / analysis.duration) * 1000}
                     y="0"
                     height="200"
-                    fill={selected === i ? "#dfe7d6" : "#eeeee6"}
-                    opacity=".75"
+                    className={selected === i ? "rep-band is-selected" : "rep-band"}
                   />
                 ))}
                 {paths.map((d, i) => (
                   <path
                     key={i}
                     d={d}
-                    stroke="#9b5137"
+                    stroke="#ff3348"
                     strokeWidth="3"
                     fill="none"
                   />

@@ -45,7 +45,7 @@ export default function MotionReplay({ analysis }: { analysis?: Analysis }) {
         if (stopped || !mount.current) return;
         const animation = new BVHLoader().parse(bvh),
           scene = new THREE.Scene();
-        scene.background = new THREE.Color("#eceee3");
+        scene.background = new THREE.Color("#09080a");
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
         const host = mount.current;
@@ -86,19 +86,19 @@ export default function MotionReplay({ analysis }: { analysis?: Analysis }) {
         group.updateMatrixWorld(true);
         const helper = new THREE.SkeletonHelper(root);
         const helperMaterial = new THREE.LineBasicMaterial({
-          color: "#294e3b",
+          color: "#ff3348",
           depthTest: false,
         });
         helper.material = helperMaterial;
         scene.add(helper);
         const geometry = new THREE.SphereGeometry(0.019, 10, 8),
-          material = new THREE.MeshBasicMaterial({ color: "#55744b" });
+          material = new THREE.MeshBasicMaterial({ color: "#ff5a6a" });
         const markers = animation.skeleton.bones.map(() => {
           const mesh = new THREE.Mesh(geometry, material);
           scene.add(mesh);
           return mesh;
         });
-        const grid = new THREE.GridHelper(5, 20, "#b0bba5", "#d6dcce");
+        const grid = new THREE.GridHelper(5, 20, "#6b0515", "#241c1f");
         scene.add(grid);
         const resize = new ResizeObserver(() => {
           const w = host.clientWidth,
