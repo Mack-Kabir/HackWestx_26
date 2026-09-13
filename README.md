@@ -36,7 +36,43 @@ python3 services/kimodo/worker.py
 
 Set the same secret and the worker's private URL as `KIMODO_API_TOKEN` and `KIMODO_URL` in the web app's `.env.local`, then restart Next.js. The worker listens on `127.0.0.1:8001` by default. If the web app runs elsewhere, expose the worker only through a private authenticated tunnel or TLS reverse proxy; setting `KIMODO_BIND=0.0.0.0` alone is not a secure deployment.
 
-The adapter allows one bounded job at a time, sends only a selected squat variation and four-second duration, invokes `kimodo_gen`, and returns BVH. It never receives the workout video or landmarks. Generated output is labeled as a generic demonstration; it does not reconstruct the athlete, prove form quality, or replace the measured review. This local Apple Silicon machine has no NVIDIA GPU, so the live generation path is adapter-tested but not model-executed.
+The adapter allows one bounded job at a time, sends only a selected squat variation and a 2–8 second duration, invokes `kimodo_gen` with a fixed demo seed, and returns a standard-T-pose SOMA77 BVH. After analysis, the requested duration follows the set's median detected rep time with a small start/end buffer; without analysis it remains four seconds. The worker accepts both current single-output BVH filename conventions.
+
+It never receives the workout video or landmarks. Normalized single-camera MediaPipe points are not converted into Kimodo constraints: Kimodo constraints require skeleton-local rotations or metric, Y-up 3D joint positions, which this app does not measure. Generated output is therefore labeled as a generic tempo-matched demonstration; it does not reconstruct the athlete, prove form quality, or replace the measured review. This local Apple Silicon machine has no NVIDIA GPU, so the live generation path is adapter-tested but not model-executed.
+
+## Solana devnet workout proof
+
+After a real video produces at least one repetition, at least 75% tracking coverage, and the prototype range/tempo metric, the sidebar offers an optional Solana receipt. Wallet Standard discovery uses the current `@solana/kit` stack and is fixed to devnet. The connected wallet pays the small devnet fee and signs a Memo-program transaction.
+
+The public memo includes:
+
+- a SHA-256 digest of the bounded versioned claim;
+- exercise name, repetition count, and clip/set duration;
+- no video, keyframes, landmarks, coaching text, wallet secret, or raw score.
+
+The private claim committed by the digest contains the analysis/detector versions, tracking coverage, and provisional range/tempo score. The transaction is a wallet-signed **self-claim** only. It does not prove attendance, total time at a gym, correct form, or reward eligibility. Synthetic samples, low-coverage clips, and incomplete sets cannot use the proof control. No token is minted and no production points are issued.
+
+`NEXT_PUBLIC_SOLANA_RPC_URL` can override the public devnet endpoint at build time. Because it is browser-visible, never place a secret-bearing provider URL there.
+
+`npm test` executes the exact Memo instruction with a throwaway signer in an in-memory LiteSVM validator. An optional live smoke test creates a new in-memory signer, requests faucet SOL, and writes an explicitly labeled integration-test memo—not a workout claim:
+
+```sh
+npm run test:devnet
+```
+
+This performs a public devnet write. The public faucet is rate-limited and may fail independently of the transaction implementation.
+
+### Server-attested prototype rewards
+
+The reward core is intentionally separate from the wallet memo. A trusted analysis service may call `POST /api/rewards/attest` with `x-formchain-issuer-token` only after it has independently accepted the workout evidence. The route recomputes the claim digest and returns a ten-minute HMAC-signed attestation bound to one wallet. The wallet must sign the exact off-chain redemption message before `POST /api/rewards/redeem` awards points. Reused attestations, claims, evidence IDs, and gym-visit IDs are rejected.
+
+Set independent random values of at least 32 bytes for `REWARD_ATTESTATION_SECRET` and `REWARD_ISSUER_TOKEN`. Both are server-only. The browser must never receive either value.
+
+Policy v1 grants 10 participation points for an accepted set, two per repetition up to 40, and at most 12 additional points for time backed by a trusted rotating-QR check-in/out record. The total is capped at 60. The policy does **not** use the provisional form score, and clip duration never earns gym-time points.
+
+The included ledger is an explicit single-process prototype: balances and used attestation IDs are kept in memory and disappear on restart. It demonstrates signature checking and replay rejection, but it is not safe for horizontally scaled or production deployment. A durable database with a unique constraint on `attestationId`, authenticated analysis service, rate limiting, and auditable QR issuer are required before enabling this flow in the UI. No reward token is minted.
+
+With a configured app server running, `npm run test:rewards-api` exercises issuance, wallet signing, successful redemption, and HTTP 409 replay rejection using a throwaway wallet. Set `REWARD_BASE_URL` only if the server is not at `http://127.0.0.1:3000`. The script needs the same test `REWARD_ISSUER_TOKEN` as the server but never receives the attestation secret.
 
 ## What is measured
 
@@ -68,7 +104,8 @@ Tests include a reduced trace from a real 14.4-second front-squat clip: five rep
 
 1. Validate counts and phases against manually labeled side-view squat clips; verify Gemini with configured credentials.
 2. Run the Kimodo worker on a supported NVIDIA host and verify the adapter against a real SOMA-RP v1.1 generation. The viewer and authenticated job path are implemented; live model execution remains unverified.
-3. Add Solana devnet wallet proofs and rewards. No wallet, transaction, token, leaderboard, or verified gym-time tracking exists yet. Clip duration is not total time at the gym.
+3. Verify the Wallet Standard flow with an installed devnet wallet and an Explorer-confirmed workout receipt. The client, claim hashing, Memo transaction, local validator execution, and conditional control are implemented.
+4. Connect the server-attested reward core to an authenticated analysis service and durable store, then add rotating-QR attendance evidence. Keep it out of the UI until those trusted dependencies exist; clip duration is not total time at the gym.
 
 Continuity and task handoffs: `.codex/PROJECT_LEDGER.md`.
 
@@ -77,4 +114,8 @@ Continuity and task handoffs: `.codex/PROJECT_LEDGER.md`.
 - [MediaPipe Pose Landmarker for Web](https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker/web_js)
 - [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
 - [NVIDIA Kimodo](https://research.nvidia.com/labs/sil/projects/kimodo/)
+- [Kimodo CLI](https://research.nvidia.com/labs/sil/projects/kimodo/docs/user_guide/cli.html)
+- [Kimodo constraints](https://research.nvidia.com/labs/sil/projects/kimodo/docs/user_guide/constraints.html)
+- [Kimodo output formats](https://research.nvidia.com/labs/sil/projects/kimodo/docs/user_guide/output_formats.html)
+- [Solana Next.js + Kit](https://solana.com/docs/frontend/nextjs-solana)
 - [Solana transactions](https://solana.com/docs/intro/quick-start/writing-to-network)

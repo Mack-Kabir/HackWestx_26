@@ -13,6 +13,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 MODEL = "Kimodo-SOMA-RP-v1.1"
+SEED = 42
 PROMPTS = {
     "bodyweight": "A person performs one controlled bodyweight squat, starting upright, lowering into a squat and returning to standing",
     "front-squat": "A person performs one controlled front squat with hands held at the front shoulders, starting upright, lowering into a squat and returning to standing",
@@ -25,7 +26,16 @@ executor = ThreadPoolExecutor(max_workers=1)
 def build_command(duration, variant, output):
     if isinstance(duration, bool) or not isinstance(duration, (int, float)) or not 2 <= duration <= 8 or variant not in PROMPTS:
         raise ValueError("Invalid motion request")
-    return ["kimodo_gen", PROMPTS[variant], "--model", MODEL, "--duration", str(duration), "--num_samples", "1", "--bvh", "--bvh_standard_tpose", "--output", str(output)]
+    return ["kimodo_gen", PROMPTS[variant], "--model", MODEL, "--duration", str(duration), "--seed", str(SEED), "--num_samples", "1", "--bvh", "--bvh_standard_tpose", "--output", str(output)]
+
+
+def resolve_bvh_output(stem):
+    """Support the single-sample names emitted by current and earlier CLIs."""
+    candidates = [stem.with_suffix(".bvh"), Path(str(stem) + "_00.bvh")]
+    existing = [path for path in candidates if path.is_file()]
+    if len(existing) != 1:
+        raise OSError("Kimodo did not produce exactly one BVH file")
+    return existing[0]
 
 
 def generate(job_id, duration, variant):
@@ -35,7 +45,7 @@ def generate(job_id, duration, variant):
         with tempfile.TemporaryDirectory(prefix="formchain-motion-") as folder:
             stem = Path(folder) / "motion"
             subprocess.run(build_command(duration, variant, stem), check=True, capture_output=True, timeout=240)
-            output = stem.with_suffix(".bvh")
+            output = resolve_bvh_output(stem)
             if output.stat().st_size > 2_000_000:
                 raise ValueError("Output too large")
             bvh = output.read_text()
@@ -67,7 +77,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self.authorized():
             return
         if self.path == "/health":
-            self.reply(200, {"cliInstalled": bool(shutil.which("kimodo_gen")), "model": MODEL})
+            self.reply(200, {"cliInstalled": bool(shutil.which("kimodo_gen")), "model": MODEL, "seed": SEED, "output": "SOMA77 BVH, standard T-pose"})
             return
         job_id = self.path.removeprefix("/jobs/")
         with lock:

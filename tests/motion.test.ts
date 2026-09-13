@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
-import { motionRequest, motionResponse, validateBvh } from "../src/lib/motion";
+import {
+  canonicalMotionDuration,
+  motionRequest,
+  motionResponse,
+  validateBvh,
+} from "../src/lib/motion";
 
 const sample = readFileSync(
   new URL("./fixtures/simple-squat.bvh", import.meta.url),
@@ -37,4 +42,18 @@ test("motion API contracts accept only bounded squat demonstrations", () => {
     }).success,
     false,
   );
+});
+
+test("canonical replay follows median rep tempo within Kimodo bounds", () => {
+  assert.equal(canonicalMotionDuration([]), 4);
+  assert.equal(
+    canonicalMotionDuration([
+      { start: 0, end: 1.5 },
+      { start: 2, end: 4 },
+      { start: 5, end: 8 },
+    ]),
+    2.5,
+  );
+  assert.equal(canonicalMotionDuration([{ start: 0, end: 0.2 }]), 2);
+  assert.equal(canonicalMotionDuration([{ start: 0, end: 20 }]), 8);
 });

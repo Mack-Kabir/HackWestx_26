@@ -16,6 +16,9 @@ test("sample analysis, timeline, export, and mobile layout", async ({
   await page.screenshot({ path: "test-results/desktop.png", fullPage: true });
   await page.getByRole("button", { name: "Explore a sample" }).click();
   await expect(page.getByText("SYNTHETIC LANDMARK SAMPLE")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Keep a public receipt" }),
+  ).toHaveCount(0);
   await expect(page.getByRole("button", { name: /REP 0/ })).toHaveCount(3);
   await page.getByRole("button", { name: /REP 02/ }).click();
   expect(Number(await page.getByRole("slider").inputValue())).toBeGreaterThan(

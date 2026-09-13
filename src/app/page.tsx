@@ -1,14 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { analyzeSquats, demoFrames, type PoseFrame } from "@/lib/analysis";
+import {
+  analyzeSquats,
+  demoFrames,
+  type Analysis,
+  type PoseFrame,
+} from "@/lib/analysis";
 import { analyzeVideo, type ClipResult } from "@/lib/video";
-import type { Coaching } from "@/lib/coaching";
+import {
+  selectCoachingKeyframes,
+  type Coaching,
+} from "@/lib/coaching";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 const MotionReplay = dynamic(() => import("@/components/motion-replay"), {
   ssr: false,
 });
+const WorkoutProof = dynamic(() => import("@/components/workout-proof"), {
+  ssr: false,
+}) as React.ComponentType<{ analysis: Analysis }>;
 
 const clock = (t: number) =>
   Math.floor(t / 60) + ":" + (t % 60).toFixed(1).padStart(4, "0");
@@ -46,7 +57,7 @@ function Skeleton({ frame }: { frame?: PoseFrame }) {
             y1={frame.landmarks[a].y * 1000}
             x2={frame.landmarks[b].x * 1000}
             y2={frame.landmarks[b].y * 1000}
-            stroke="#d7ff93"
+            stroke="#ff3348"
             strokeWidth="4"
           />
         ))}
@@ -56,8 +67,8 @@ function Skeleton({ frame }: { frame?: PoseFrame }) {
           cx={frame.landmarks[i].x * 1000}
           cy={frame.landmarks[i].y * 1000}
           r="6"
-          fill="#d7ff93"
-          stroke="#284635"
+          fill="#ff3348"
+          stroke="#1a0508"
           strokeWidth="2"
         />
       ))}
@@ -167,14 +178,10 @@ export default function Home() {
     setCoachError("");
     const controller = new AbortController();
     coachAbort.current = controller;
-    const all = result.keyframes;
-    const chosen =
-      all.length <= 6
-        ? all
-        : Array.from(
-            { length: 6 },
-            (_, i) => all[Math.round((i * (all.length - 1)) / 5)],
-          );
+    const chosen = selectCoachingKeyframes(
+      result.keyframes,
+      result.analysis.reps,
+    );
     try {
       const response = await fetch("/api/coach", {
         method: "POST",
@@ -184,7 +191,11 @@ export default function Home() {
           duration: result.analysis.duration,
           coverage: result.analysis.coverage,
           reps: result.analysis.reps,
-          keyframes: chosen.map(({ time, image }) => ({ time, image })),
+          keyframes: chosen.map(({ time, label, image }) => ({
+            time,
+            label,
+            image,
+          })),
         }),
       });
       const data = await response.json();
@@ -587,6 +598,11 @@ export default function Home() {
                 </p>
               )}
             </div>
+            {analysis?.source === "video" &&
+              analysis.reps.length > 0 &&
+              analysis.movementScore !== null && (
+                <WorkoutProof analysis={analysis} />
+              )}
           </aside>
         </div>
         <section className="rep-section" aria-labelledby="rep-title">
@@ -648,15 +664,14 @@ export default function Home() {
                     width={((r.end - r.start) / analysis.duration) * 1000}
                     y="0"
                     height="200"
-                    fill={selected === i ? "#dfe7d6" : "#eeeee6"}
-                    opacity=".75"
+                    className={selected === i ? "rep-band is-selected" : "rep-band"}
                   />
                 ))}
                 {paths.map((d, i) => (
                   <path
                     key={i}
                     d={d}
-                    stroke="#9b5137"
+                    stroke="#ff3348"
                     strokeWidth="3"
                     fill="none"
                   />
@@ -766,7 +781,7 @@ export default function Home() {
             </details>
           )}
         </section>
-        <MotionReplay />
+        <MotionReplay analysis={analysis} />
         <section id="how-it-works" className="how-section">
           <div>
             <p className="overline">A MORE CONSIDERED PRACTICE</p>

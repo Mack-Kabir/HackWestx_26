@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Rep } from "./analysis";
 
 export const motionRequest = z.object({
   duration: z.number().min(2).max(8),
@@ -19,6 +20,25 @@ export const motionResponse = z.discriminatedUnion("status", [
     model: z.string().max(100),
   }),
 ]);
+
+export function canonicalMotionDuration(
+  reps: Array<Pick<Rep, "start" | "end">>,
+): number {
+  if (!reps.length) return 4;
+  const durations = reps
+    .map((rep) => rep.end - rep.start)
+    .filter((duration) => Number.isFinite(duration) && duration > 0)
+    .sort((left, right) => left - right);
+  if (!durations.length) return 4;
+  const middle = Math.floor(durations.length / 2);
+  const median =
+    durations.length % 2
+      ? durations[middle]
+      : (durations[middle - 1] + durations[middle]) / 2;
+  // A small buffer gives a single-prompt generation room to begin upright and
+  // settle after standing. Kimodo's supported request remains bounded.
+  return Number(Math.min(8, Math.max(2, median + 0.5)).toFixed(2));
+}
 
 // Validate the BVH grammar and numeric bounds before passing it to Three's permissive parser.
 export function validateBvh(text: string) {
